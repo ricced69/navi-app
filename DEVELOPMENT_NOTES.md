@@ -4,61 +4,72 @@ Last Updated: {{TIMESTAMP}}
 
 ## Project Goal
 
-Create a mobile-first web application (Proof of Concept) for Debrecen, Hungary, called NAVI.
-Users can discover partner businesses, earn points through simple interactions (initially tasks, not purchases), and redeem points for discounts at those businesses.
-The goal is to test the viability of this hyperlocal loyalty concept.
+Create a **demo-ready, Minimum Viable Product (MVP)** (mobile-first web application) for Debrecen, Hungary, called NAVI.
+Users can discover partner businesses, earn points through simple tasks, and **securely redeem** points for discounts using a **QR code-based verification** system.
+The goal is to demonstrate a functional, persistent, and reasonably secure core loop to potential partners and test the concept's appeal.
 
 ## Current Status (as of {{TIMESTAMP}})
 
 *   **Setup:** Node.js/Express backend, Vanilla JS/HTML/CSS frontend.
-*   **Database:** SQLite (`navi.db` for data, `sessions.db` for sessions) used locally and in Vercel's `/tmp` directory.
-*   **Version Control:** Git repository set up and pushed to GitHub (`https://github.com/ricced69/navi-app.git`).
-*   **Deployment:** Continuous deployment set up via Vercel. Live at: [Insert Vercel URL Here - User needs to add this]
-*   **Core Features Implemented:**
-    *   User Signup (email/password, bcrypt hashing).
-    *   User Login/Logout (session management via `express-session` and `connect-sqlite3`).
-    *   Displaying a list of hardcoded/seeded partner businesses (`/api/businesses`) to logged-in users.
-    *   **Added basic CSS styling** for a cleaner presentation.
-*   **Dummy Data:** Using 3 dummy businesses for testing.
+*   **Database:** ~~SQLite (`navi.db`/`sessions.db`) used locally and in Vercel's `/tmp` directory.~~ **Identified as insufficient due to lack of persistence on Vercel.**
+*   **Version Control:** Git repository on GitHub (`https://github.com/ricced69/navi-app.git`).
+*   **Deployment:** Continuous deployment via Vercel. Live at: [Insert Vercel URL Here - User needs to add this]. **Currently experiencing login persistence issues due to SQLite limitations.**
+*   **Core Features Implemented (Technically, Pre-Persistence Fix):**
+    *   User Signup/Login/Logout (using ephemeral SQLite/sessions).
+    *   Displaying seeded partner businesses.
+    *   Basic point earning via repeatable button clicks (no rate limiting).
+    *   Displaying seeded rewards.
+    *   Basic (insecure, non-persistent) reward redemption flow.
+*   **Styling:** Basic CSS improvements applied.
+*   **Development Notes:** This file established for context tracking.
 
-## Key Decisions & Context
+## Revised Strategy & Key Decisions (Shift from basic PoC to Demo MVP)
 
-*   **PoC First:** Building a minimal viable product first, aiming for foundational code quality to allow iteration, not a throwaway prototype.
-*   **Web App:** Starting with a web application (mobile-first) instead of native apps for speed.
-*   **SQLite for Now:** Using SQLite for ease of local setup and initial Vercel deployment (using `/tmp` path on Vercel). Acknowledged that this means separate user accounts/data locally vs deployed, and data is ephemeral on Vercel.
-*   **Persistent DB Later:** Plan to migrate to a free-tier hosted PostgreSQL (e.g., Supabase, Neon) later for persistent data if the PoC is successful.
-*   **Task-Based Points:** Initial point earning will be via simple tasks (like check-ins), not purchase verification, to reduce MVP complexity.
-*   **Manual Business Onboarding:** Businesses are currently added via code seeding (`database.js`). An admin panel is a future feature.
-*   **Vercel:** Chosen for deployment due to ease of use and free tier.
-*   **GitHub:** Used for version control and triggering Vercel builds.
-*   **Basic Styling Added:** Applied simple CSS to improve layout and appearance for demo purposes.
+*   **Increased Scope for Demo:** Recognizing that a simple visual redemption confirmation is insecure (easily spoofed) and untrackable for partners (hindering business model validation), the MVP scope is increased to include a more robust flow.
+*   **QR Code Redemption:** Implementing a QR code system for redemption is now **essential** for the MVP demo. The user app will generate a QR code containing a unique, short-lived token upon redemption.
+*   **Persistent Database Required:** The ephemeral nature of SQLite on Vercel `/tmp` is unacceptable for a demo requiring persistent logins and data tracking. **Migrating to a hosted PostgreSQL database (via a free-tier service like Supabase or Neon) is the immediate priority.**
+*   **Partner App Deferred:** While partners will eventually need their own interface (web app/portal) to scan QR codes and view stats, this partner-facing app **will not** be built for the *initial* MVP demo. The demo will focus on the user app generating the QR code, with the partner scanning process explained verbally or mocked up.
+*   **Focus on User App First:** Development will concentrate on making the user-facing web app fully functional with the persistent database and QR code generation.
+*   **Rate Limiting for Points:** Basic server-side rate limiting for point earning tasks will be implemented to make the demo more realistic.
+*   **Admin Panel Deferred:** Partner onboarding and reward management will remain manual (code seeding or direct DB manipulation by the developer) for the MVP; a proper admin panel is a future feature.
 
-## Immediate Next Steps
+## Immediate Next Steps (Revised)
 
-1.  **(Current Focus):** Implement the first point-earning mechanism (e.g., an "Earn Points" button per business).
-    *   Update database schema (`users` table with `points_balance`).
-    *   Add backend API endpoint (`POST /api/businesses/:businessId/earn`) to award points.
-    *   Add backend API endpoint (`GET /api/user/points`) to fetch current balance.
-    *   Update frontend to display the button, handle clicks, and show point balance.
+1.  **(Current Focus): Migrate Database to Hosted PostgreSQL**
+    *   User to choose and set up a free-tier account (e.g., Supabase, Neon).
+    *   Obtain database connection credentials.
+    *   Install `pg` Node.js library.
+    *   Update `database.js` connection logic.
+    *   Update `server.js` session store logic (using `connect-pg-simple` or similar).
+    *   Update Vercel environment variables with new DB credentials and potentially a new session secret.
+    *   Ensure database seeding works with PostgreSQL.
+    *   **Goal:** Achieve persistent logins and data on the Vercel deployment.
+2.  **Implement QR Code Redemption Flow (User App Side):**
+    *   Add `redemptions` table to DB schema.
+    *   Modify `POST /api/rewards/:rewardId/redeem` endpoint:
+        *   Generate unique, short-lived redemption token.
+        *   Log redemption as 'pending' in `redemptions` table.
+        *   Return token to frontend.
+    *   Modify frontend `handleRedeemRewardClick`:
+        *   Add QR code generation library.
+        *   On successful redeem API call, generate and display QR code containing the token.
+3.  **Implement Basic Point Earning Rate Limiting:**
+    *   Add necessary DB schema (e.g., `earnings_log` table or timestamps).
+    *   Modify `POST /api/businesses/:businessId/earn` endpoint to check limits before awarding points.
+4.  **Improve Redemption Confirmation UI:** Enhance the screen/modal displaying the QR code for clarity.
 
-## Future Ideas / Roadmap
+## Future Ideas / Roadmap (Post-MVP Demo)
 
-*   Display user point balance.
-*   Implement reward definition and redemption.
-*   Build an Admin Panel for managing businesses and rewards.
-*   Migrate to a persistent database (e.g., PostgreSQL on Supabase/Neon).
-*   Implement different point-earning tasks (surveys, ratings?).
-*   Add location-based features (e.g., map view, check-in verification).
-*   Improve UI/UX design.
-*   Consider native mobile apps if PoC succeeds.
+*   Build Partner-Facing App/Interface (including QR scanner).
+*   Build Admin Panel (for managing businesses, rewards, users).
+*   Implement different point-earning tasks.
+*   Map View on User App.
+*   Advanced UI/UX, Search/Filtering.
+*   Notifications.
 
 ## Local Setup
 
-1.  Clone the repository.
-2.  Ensure Node.js and npm are installed.
-3.  Run `npm install` in the root directory.
-4.  Run `npm start` to start the local server.
-5.  Access the app at `http://localhost:3000`.
+*   (Will require update after DB migration - need PostgreSQL running locally or connection to hosted DB)
 
 ---
-*This file will be updated periodically to reflect project progress.* 
+*This file reflects the updated strategy for a demo-ready MVP as of {{TIMESTAMP}}.* 
