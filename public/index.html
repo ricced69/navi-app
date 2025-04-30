@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAVI - Debrecen</title>
+    <link rel="stylesheet" href="style.css"> <!-- Link to a CSS file we'll create later -->
+</head>
+<body>
+    <h1>Welcome to NAVI!</h1>
+    <p>Your loyalty app for Debrecen.</p>
+
+    <div id="user-status">
+        <!-- Status will be updated by JS -->
+        Checking login status...
+    </div>
+
+    <hr>
+
+    <div id="auth-forms">
+        <!-- Forms will be hidden/shown by JS -->
+        <h2>Sign Up</h2>
+        <form id="signup-form">
+            <input type="email" id="signup-email" placeholder="Email" required>
+            <input type="password" id="signup-password" placeholder="Password" required>
+            <button type="submit">Sign Up</button>
+            <p id="signup-message"></p>
+        </form>
+
+        <h2>Login</h2>
+        <form id="login-form">
+            <input type="email" id="login-email" placeholder="Email" required>
+            <input type="password" id="login-password" placeholder="Password" required>
+            <button type="submit">Login</button>
+            <p id="login-message"></p>
+        </form>
+    </div>
+
+    <div id="logout-section" style="display: none;">
+        <button id="logout-button">Logout</button>
+    </div>
+
+    <hr>
+
+    <div id="main-content" style="display: none;">
+        <h2>App Content</h2>
+        <p>Businesses and points will go here once logged in.</p>
+        <!-- TODO: Add business list, points display etc. -->
+    </div>
+
+    <script src="script.js"></script> <!-- Link to a JS file we'll create later -->
+</body>
+</html> 
