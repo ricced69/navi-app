@@ -140,7 +140,6 @@ async function handleEarnPointsClick(event) {
     const businessId = button.dataset.businessId;
     const messageSpan = businessListDiv.querySelector(`.earn-message[data-msg-for="${businessId}"]`);
 
-    button.disabled = true; // Disable button immediately
     messageSpan.textContent = 'Processing...';
 
     try {
@@ -155,12 +154,10 @@ async function handleEarnPointsClick(event) {
             // Keep button disabled for this session to prevent spamming (simplest approach)
         } else {
             messageSpan.textContent = `Error: ${data.message}`; // Show error
-            button.disabled = false; // Re-enable button on error
         }
     } catch (error) {
         console.error("Error earning points:", error);
         messageSpan.textContent = 'Network error.';
-        button.disabled = false; // Re-enable button on network error
     }
 }
 
