@@ -211,6 +211,76 @@ app.get('/api/user/points', isAuthenticated, (req, res) => {
     });
 });
 
+// --- Rewards Routes ---
+
+// Get Active Rewards for a Business (requires login)
+app.get('/api/businesses/:businessId/rewards', isAuthenticated, (req, res) => {
+    const businessId = req.params.businessId;
+    const sql = "SELECT id, description, points_cost FROM rewards WHERE business_id = ? AND is_active = TRUE ORDER BY points_cost";
+
+    db.all(sql, [businessId], (err, rows) => {
+        if (err) {
+            console.error(`Error fetching rewards for business ${businessId}:`, err.message);
+            return res.status(500).json({ message: "Database error fetching rewards." });
+        }
+        res.status(200).json(rows);
+    });
+});
+
+// Redeem a Reward (requires login)
+app.post('/api/rewards/:rewardId/redeem', isAuthenticated, (req, res) => {
+    const userId = req.session.userId;
+    const rewardId = req.params.rewardId;
+
+    // 1. Get reward details and user's current points in one go (or two queries)
+    db.get("SELECT points_cost FROM rewards WHERE id = ? AND is_active = TRUE", [rewardId], (err, reward) => {
+        if (err) {
+            console.error(`Error fetching reward ${rewardId}:`, err.message);
+            return res.status(500).json({ message: "Database error checking reward." });
+        }
+        if (!reward) {
+            return res.status(404).json({ message: "Reward not found or not active." });
+        }
+
+        // 2. Get user's current points
+        db.get("SELECT points_balance FROM users WHERE id = ?", [userId], (err, user) => {
+            if (err) {
+                console.error(`Error fetching user ${userId} points:`, err.message);
+                return res.status(500).json({ message: "Database error checking user points." });
+            }
+            if (!user) {
+                return res.status(404).json({ message: "User not found." }); // Should not happen
+            }
+
+            // 3. Check if user has enough points
+            if (user.points_balance < reward.points_cost) {
+                return res.status(400).json({ message: "Not enough points to redeem this reward." });
+            }
+
+            // 4. Deduct points
+            const newBalance = user.points_balance - reward.points_cost;
+            const sqlUpdate = "UPDATE users SET points_balance = ? WHERE id = ?";
+            db.run(sqlUpdate, [newBalance, userId], function(err) {
+                if (err) {
+                    console.error(`Error deducting points for user ${userId}:`, err.message);
+                    return res.status(500).json({ message: "Database error redeeming reward." });
+                }
+                if (this.changes === 0) {
+                     return res.status(404).json({ message: "User not found during points deduction." }); // Should not happen
+                }
+
+                // 5. Success - Respond (In real app, might also log redemption)
+                console.log(`User ${userId} redeemed reward ${rewardId}. New balance: ${newBalance}`);
+                res.status(200).json({
+                    message: "Reward redeemed successfully! Show this confirmation.", // Simple confirmation
+                    newBalance: newBalance
+                });
+                // TODO: Log this redemption event in a separate table later
+            });
+        });
+    });
+});
+
 // --- Server Start ---
 
 app.listen(PORT, () => {

@@ -27,6 +27,15 @@ const initialBusinesses = [
     { name: "Retro Bar", description: "Evening drinks & music", address: "Simonffy u. 5" }
 ];
 
+// Dummy Rewards Data (assuming business IDs 1, 2, 3 correspond to the seeded businesses)
+const initialRewards = [
+    { business_id: 1, description: "Free Croissant with any Coffee", points_cost: 50 },
+    { business_id: 1, description: "15% off total bill", points_cost: 120 },
+    { business_id: 2, description: "Free Soft Drink with Lunch Menu", points_cost: 30 },
+    { business_id: 3, description: "€5 Off Any Cocktail", points_cost: 80 },
+    { business_id: 3, description: "Skip the Queue Pass (One Time)", points_cost: 40 }
+];
+
 // Connect to the database (or create it if it doesn't exist)
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
@@ -81,7 +90,37 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 }
             });
 
-            // Add other tables here later (e.g., rewards, points)
+            // Create the rewards table
+            db.run(`CREATE TABLE IF NOT EXISTS rewards (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                business_id INTEGER NOT NULL,
+                description TEXT NOT NULL,
+                points_cost INTEGER NOT NULL CHECK(points_cost > 0),
+                is_active BOOLEAN DEFAULT TRUE NOT NULL,
+                FOREIGN KEY (business_id) REFERENCES businesses (id) ON DELETE CASCADE
+            )`, (err) => {
+                if (err) console.error("Error creating rewards table:", err.message);
+                else {
+                    // Seed rewards if table is empty
+                    db.get("SELECT COUNT(*) as count FROM rewards", (err, row) => {
+                        if (!err && row.count === 0) {
+                            console.log("Seeding initial reward data...");
+                            const stmt = db.prepare("INSERT INTO rewards (business_id, description, points_cost) VALUES (?, ?, ?)");
+                            initialRewards.forEach(reward => {
+                                stmt.run(reward.business_id, reward.description, reward.points_cost);
+                            });
+                            stmt.finalize((err) => {
+                                if (!err) console.log("Finished seeding rewards.");
+                                else console.error("Error finalizing reward seed statement:", err.message);
+                            });
+                        } else if (err) {
+                            console.error("Error checking reward count for seeding:", err.message);
+                        }
+                    });
+                }
+            });
+
+            // Add other tables here later (e.g., points)
         });
     }
 });

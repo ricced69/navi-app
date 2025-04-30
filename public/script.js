@@ -60,19 +60,25 @@ async function loadBusinesses() {
         const ul = document.createElement('ul');
         businesses.forEach(business => {
             const li = document.createElement('li');
-            li.style.marginBottom = '10px'; // Add some spacing
+            li.style.marginBottom = '10px';
             li.innerHTML = `
-                <strong>${business.name}</strong><br>
-                <em>${business.description || 'No description'}</em><br>
-                <small>${business.address || 'No address'}</small><br>
-                <button class="earn-points-btn" data-business-id="${business.id}">Earn 10 Points</button>
-                <span class="earn-message" data-msg-for="${business.id}" style="margin-left: 10px;"></span>
+                <div>
+                    <strong>${business.name}</strong><br>
+                    <em>${business.description || 'No description'}</em><br>
+                    <small>${business.address || 'No address'}</small><br>
+                    <button class="earn-points-btn" data-business-id="${business.id}">Earn 10 Points</button>
+                    <span class="earn-message" data-msg-for="${business.id}" style="margin-left: 10px;"></span>
+                </div>
+                <div class="rewards-list" data-rewards-for="${business.id}" style="margin-top: 10px; padding-left: 15px; border-left: 2px solid #eee;">
+                    <small>Loading rewards...</small>
+                </div>
             `;
             ul.appendChild(li);
+            // Fetch rewards for this specific business
+            loadRewardsForBusiness(business.id);
         });
         businessListDiv.appendChild(ul);
 
-        // Add event listeners AFTER buttons are added to the DOM
         document.querySelectorAll('.earn-points-btn').forEach(button => {
             button.addEventListener('click', handleEarnPointsClick);
         });
@@ -80,6 +86,51 @@ async function loadBusinesses() {
     } catch (error) {
         console.error('Error loading businesses:', error);
         businessListDiv.innerHTML = `<p>Error loading businesses: ${error.message}</p>`;
+    }
+}
+
+// Function to fetch and display rewards for a specific business
+async function loadRewardsForBusiness(businessId) {
+    const rewardsContainer = businessListDiv.querySelector(`.rewards-list[data-rewards-for="${businessId}"]`);
+    if (!rewardsContainer) return;
+
+    try {
+        const response = await fetch(`/api/businesses/${businessId}/rewards`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const rewards = await response.json();
+
+        if (rewards.length === 0) {
+            rewardsContainer.innerHTML = '<small>No rewards available.</small>';
+            return;
+        }
+
+        rewardsContainer.innerHTML = '<small>Available Rewards:</small><ul>'; // Start list
+        const ul = document.createElement('ul');
+        ul.style.paddingLeft = '0';
+        ul.style.listStyle = 'none';
+
+        rewards.forEach(reward => {
+            const rewardLi = document.createElement('li');
+            rewardLi.style.marginBottom = '5px';
+            rewardLi.innerHTML = `
+                ${reward.description} (${reward.points_cost} points)
+                <button class="redeem-reward-btn" data-reward-id="${reward.id}" data-cost="${reward.points_cost}">Redeem</button>
+                <span class="redeem-message" data-msg-for-reward="${reward.id}" style="margin-left: 5px; font-size: 0.85em;"></span>
+            `;
+            ul.appendChild(rewardLi);
+        });
+        rewardsContainer.appendChild(ul);
+
+        // Add listeners for the new redeem buttons
+        rewardsContainer.querySelectorAll('.redeem-reward-btn').forEach(button => {
+            button.addEventListener('click', handleRedeemRewardClick);
+        });
+
+    } catch (error) {
+        console.error(`Error loading rewards for business ${businessId}:`, error);
+        rewardsContainer.innerHTML = '<small>Error loading rewards.</small>';
     }
 }
 
@@ -110,6 +161,50 @@ async function handleEarnPointsClick(event) {
         console.error("Error earning points:", error);
         messageSpan.textContent = 'Network error.';
         button.disabled = false; // Re-enable button on network error
+    }
+}
+
+// Handle Redeem Reward button click
+async function handleRedeemRewardClick(event) {
+    const button = event.target;
+    const rewardId = button.dataset.rewardId;
+    const pointsCost = parseInt(button.dataset.cost, 10);
+    const messageSpan = button.parentElement.querySelector(`.redeem-message[data-msg-for-reward="${rewardId}"]`);
+
+    // Basic check if user has enough points locally (optional, server does final check)
+    const currentBalance = parseInt(pointsBalanceSpan.textContent, 10);
+    if (currentBalance < pointsCost) {
+        messageSpan.textContent = 'Not enough points.';
+        return;
+    }
+
+    // Confirm before spending points
+    if (!confirm(`Redeem "${button.parentElement.textContent.split('(')[0].trim()}" for ${pointsCost} points?`)) {
+        return;
+    }
+
+    button.disabled = true;
+    messageSpan.textContent = 'Redeeming...';
+
+    try {
+        const response = await fetch(`/api/rewards/${rewardId}/redeem`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            messageSpan.textContent = data.message; // Show confirmation message
+            updatePointsDisplay(data.newBalance); // Update total points
+             // Keep button disabled for this session or maybe hide the reward? Simplest is disabled.
+        } else {
+            messageSpan.textContent = `Error: ${data.message}`;
+            button.disabled = false;
+        }
+
+    } catch (error) {
+        console.error("Error redeeming reward:", error);
+        messageSpan.textContent = 'Network error.';
+        button.disabled = false;
     }
 }
 
