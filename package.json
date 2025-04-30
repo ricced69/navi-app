@@ -12,9 +12,11 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "connect-pg-simple": "^10.0.0",
     "connect-sqlite3": "^0.9.15",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
+    "pg": "^8.15.6",
     "sqlite3": "^5.1.7"
   }
 }

@@ -2,4 +2,8 @@
 node_modules/
 
 # Ignore environment variables file (we might add this later)
-.env 
+.env
+
+# Ignore local database files
+*.db
+*.db-journal 
