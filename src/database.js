@@ -68,16 +68,14 @@ async function initializeSchema() {
         console.log("Rewards table checked/created.");
 
         // Create sessions table (needed for connect-pg-simple)
-        // Use the default schema provided by connect-pg-simple
+        // Define primary key directly in CREATE TABLE
         await client.query(`
             CREATE TABLE IF NOT EXISTS "session" (
                 "sid" varchar NOT NULL COLLATE "default",
                 "sess" json NOT NULL,
-                "expire" timestamp(6) NOT NULL
+                "expire" timestamp(6) NOT NULL,
+                CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
             ) WITH (OIDS=FALSE);
-        `);
-        await client.query(`
-            ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
         `);
          await client.query(`
             CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
