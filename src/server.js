@@ -216,13 +216,15 @@ app.get('/api/user/points', isAuthenticated, (req, res) => {
 // Get Active Rewards for a Business (requires login)
 app.get('/api/businesses/:businessId/rewards', isAuthenticated, (req, res) => {
     const businessId = req.params.businessId;
+    console.log(`[Debug] Received request for rewards for businessId: ${businessId}`); // Log request
     const sql = "SELECT id, description, points_cost FROM rewards WHERE business_id = ? AND is_active = TRUE ORDER BY points_cost";
 
     db.all(sql, [businessId], (err, rows) => {
         if (err) {
-            console.error(`Error fetching rewards for business ${businessId}:`, err.message);
+            console.error(`[Debug] DB Error fetching rewards for business ${businessId}:`, err.message);
             return res.status(500).json({ message: "Database error fetching rewards." });
         }
+        console.log(`[Debug] Rewards query result for business ${businessId}:`, rows); // Log result
         res.status(200).json(rows);
     });
 });

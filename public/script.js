@@ -91,17 +91,26 @@ async function loadBusinesses() {
 
 // Function to fetch and display rewards for a specific business
 async function loadRewardsForBusiness(businessId) {
+    console.log(`[Debug] loadRewardsForBusiness called for businessId: ${businessId}`);
     const rewardsContainer = businessListDiv.querySelector(`.rewards-list[data-rewards-for="${businessId}"]`);
-    if (!rewardsContainer) return;
+    if (!rewardsContainer) {
+        console.error(`[Debug] Could not find rewards container for businessId: ${businessId}`);
+        return;
+    }
 
     try {
         const response = await fetch(`/api/businesses/${businessId}/rewards`);
+        console.log(`[Debug] Rewards fetch response for ${businessId}:`, response);
+
         if (!response.ok) {
+            console.error(`[Debug] Rewards fetch failed for ${businessId} with status: ${response.status}`);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const rewards = await response.json();
+        console.log(`[Debug] Rewards data for ${businessId}:`, rewards);
 
         if (rewards.length === 0) {
+            console.log(`[Debug] No rewards found for ${businessId}`);
             rewardsContainer.innerHTML = '<small>No rewards available.</small>';
             return;
         }
@@ -128,8 +137,10 @@ async function loadRewardsForBusiness(businessId) {
             button.addEventListener('click', handleRedeemRewardClick);
         });
 
+        console.log(`[Debug] Finished rendering rewards for ${businessId}`);
+
     } catch (error) {
-        console.error(`Error loading rewards for business ${businessId}:`, error);
+        console.error(`[Debug] Error in loadRewardsForBusiness for ${businessId}:`, error);
         rewardsContainer.innerHTML = '<small>Error loading rewards.</small>';
     }
 }
