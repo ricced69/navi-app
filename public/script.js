@@ -168,8 +168,10 @@ async function handleEarnPointsClick(event) {
     const messageSpan = businessListDiv.querySelector(`.earn-message[data-msg-for="${businessId}"]`);
 
     // Keep button enabled initially, disable only on processing
-    button.disabled = true;
     messageSpan.textContent = 'Processing...';
+
+    // Temporarily disable while processing THIS request
+    button.disabled = true;
 
     try {
         const response = await fetch(`/api/businesses/${businessId}/earn`, {
@@ -180,14 +182,15 @@ async function handleEarnPointsClick(event) {
         if (response.ok) {
             messageSpan.textContent = data.message;
             updatePointsDisplay(data.newBalance);
-            // Don't re-enable button on success for now, let rate limit handle it
+            // Don't re-enable button on success, let rate limit handle it - button remains disabled from start of try block
         } else {
             // Handle specific errors like rate limiting
             messageSpan.textContent = `Error: ${data.message || response.statusText}`;
             if (response.status !== 429) {
-                 // Re-enable button only if it wasn't a rate limit error
-                 button.disabled = false; 
+                 // Re-enable button only if it wasn't a rate limit error (or other non-OK status)
+                 button.disabled = false;
             }
+             // If it *was* 429, the button stays disabled from the start of the try block
         }
 
     } catch (error) {
@@ -195,6 +198,7 @@ async function handleEarnPointsClick(event) {
         messageSpan.textContent = 'Network error.';
         button.disabled = false; // Re-enable on network errors
     }
+    // Note: Button might stay disabled if rate limit (429) was hit.
 }
 
 // Function to display QR Code Modal
