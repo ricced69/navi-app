@@ -159,7 +159,7 @@ app.post('/api/businesses/:businessId/earn', isAuthenticated, async (req, res) =
     const userId = req.session.userId;
     const businessId = parseInt(req.params.businessId, 10);
     const pointsToAward = 10;
-    const rateLimitHours = 24; // Limit to once per 24 hours per business
+    const rateLimitMinutes = 1; // TEMPORARY: Limit to once per 1 minute for testing
     const client = await db.pool.connect();
 
     try {
@@ -176,11 +176,11 @@ app.post('/api/businesses/:businessId/earn', isAuthenticated, async (req, res) =
         
         if (lastEarningResult.rows.length > 0) {
             const lastEarningTime = new Date(lastEarningResult.rows[0].timestamp);
-            const timeLimit = new Date(Date.now() - rateLimitHours * 60 * 60 * 1000);
+            const timeLimit = new Date(Date.now() - rateLimitMinutes * 60 * 1000);
             if (lastEarningTime > timeLimit) {
                  await client.query('ROLLBACK');
                  console.log(`Rate limit hit for user ${userId} at business ${businessId}`);
-                 return res.status(429).json({ message: `Rate limit: You can earn points here again in ${rateLimitHours} hours.` });
+                 return res.status(429).json({ message: `Rate limit: You can earn points here again in ${rateLimitMinutes} minute(s).` });
             }
         }
 
