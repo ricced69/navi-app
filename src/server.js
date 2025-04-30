@@ -4,6 +4,8 @@ const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);
 const bcrypt = require('bcrypt');
 const db = require('./database'); // Use new PG export { pool, initializeSchema, query }
+const { Pool } = require('pg');
+const crypto = require('crypto'); // Need crypto for token generation
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Use environment variable or default to 3000
@@ -215,41 +217,55 @@ app.get('/api/businesses/:businessId/rewards', isAuthenticated, async (req, res)
 // Redeem a Reward (requires login)
 app.post('/api/rewards/:rewardId/redeem', isAuthenticated, async (req, res) => {
     const userId = req.session.userId;
-    const rewardId = req.params.rewardId;
-    const client = await db.pool.connect(); // Get client for transaction
+    const rewardId = parseInt(req.params.rewardId, 10);
+    const client = await db.pool.connect();
+    const tokenExpiryMinutes = 5;
+
     try {
         await client.query('BEGIN');
-        // 1. Lock user row and get reward details
+        
+        // 1. Lock user row and get reward details (including business_id)
         const userResult = await client.query("SELECT points_balance FROM users WHERE id = $1 FOR UPDATE", [userId]);
         if (userResult.rows.length === 0) throw new Error("User not found");
         const userBalance = userResult.rows[0].points_balance;
 
-        const rewardResult = await client.query("SELECT points_cost FROM rewards WHERE id = $1 AND is_active = TRUE", [rewardId]);
+        const rewardResult = await client.query("SELECT points_cost, business_id FROM rewards WHERE id = $1 AND is_active = TRUE", [rewardId]);
         if (rewardResult.rows.length === 0) throw new Error("Reward not found or not active");
-        const rewardCost = rewardResult.rows[0].points_cost;
+        const { points_cost: rewardCost, business_id: businessId } = rewardResult.rows[0];
 
         // 2. Check points
         if (userBalance < rewardCost) {
             throw new Error("Not enough points");
         }
 
-        // 3. Deduct points
+        // 3. Generate unique token and expiry
+        const redemptionToken = crypto.randomBytes(16).toString('hex');
+        const expiresAt = new Date(Date.now() + tokenExpiryMinutes * 60 * 1000);
+
+        // 4. Insert pending redemption record
+        await client.query(`
+            INSERT INTO redemptions (user_id, reward_id, business_id, redemption_token, token_expires_at, status)
+            VALUES ($1, $2, $3, $4, $5, 'PENDING')
+        `, [userId, rewardId, businessId, redemptionToken, expiresAt]);
+
+        // 5. Deduct points
         const newBalance = userBalance - rewardCost;
         await client.query("UPDATE users SET points_balance = $1 WHERE id = $2", [newBalance, userId]);
 
-        // 4. Commit transaction
+        // 6. Commit transaction
         await client.query('COMMIT');
 
-        // 5. Success - Respond
-        console.log(`User ${userId} redeemed reward ${rewardId}. New balance: ${newBalance}`);
+        // 7. Success - Respond with token
+        console.log(`User ${userId} initiated redemption for reward ${rewardId}. Token: ${redemptionToken}. New balance: ${newBalance}`);
         res.status(200).json({
-            message: "Reward redeemed successfully! Show this confirmation.",
+            message: "Redemption initiated! Generate QR code.",
+            redemptionToken: redemptionToken,
+            expiresAt: expiresAt.toISOString(),
             newBalance: newBalance
         });
-        // TODO: Log redemption event
 
     } catch (error) {
-        await client.query('ROLLBACK'); // Rollback on error
+        await client.query('ROLLBACK');
         console.error(`Error redeeming reward ${rewardId} for user ${userId}:`, error);
         if (error.message === "Not enough points") {
             res.status(400).json({ message: error.message });
@@ -259,7 +275,7 @@ app.post('/api/rewards/:rewardId/redeem', isAuthenticated, async (req, res) => {
             res.status(500).json({ message: "Database error redeeming reward." });
         }
     } finally {
-        client.release(); // Release client back to pool
+        client.release();
     }
 });
 

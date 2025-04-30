@@ -67,6 +67,24 @@ async function initializeSchema() {
         `);
         console.log("Rewards table checked/created.");
 
+        // Create redemptions table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS redemptions (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL, -- Keep log even if user deleted?
+                reward_id INTEGER NOT NULL REFERENCES rewards(id) ON DELETE CASCADE,
+                business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE, -- Denormalized for easier querying
+                redemption_token TEXT UNIQUE NOT NULL, -- The unique token for the QR code
+                token_expires_at TIMESTAMPTZ NOT NULL, -- When the token becomes invalid
+                status VARCHAR(10) DEFAULT 'PENDING' NOT NULL, -- PENDING, REDEEMED, EXPIRED
+                redeemed_at TIMESTAMPTZ, -- When it was actually scanned/confirmed
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+            );
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_redemptions_token ON redemptions (redemption_token);`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_redemptions_status_expiry ON redemptions (status, token_expires_at);`);
+        console.log("Redemptions table checked/created.");
+
         // Create sessions table (needed for connect-pg-simple)
         // Define primary key directly in CREATE TABLE
         await client.query(`

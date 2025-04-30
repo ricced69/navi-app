@@ -22,6 +22,12 @@ const loginMessageP = document.getElementById('login-message');
 
 const logoutButton = document.getElementById('logout-button');
 
+const qrCodeModal = document.getElementById('qr-code-modal');
+const qrCodeCanvas = document.getElementById('qr-code-canvas');
+const qrRewardDescription = document.getElementById('qr-reward-description');
+const qrExpiryInfo = document.getElementById('qr-expiry-info');
+const closeQrModalButton = document.getElementById('close-qr-modal');
+
 // --- Functions ---
 
 // Function to update points display
@@ -182,12 +188,36 @@ async function handleEarnPointsClick(event) {
     }
 }
 
+// Function to display QR Code Modal
+function displayQRCode(token, rewardDesc, expiryISOString) {
+    const canvas = qrCodeCanvas;
+    QRCode.toCanvas(canvas, token, { width: 256, errorCorrectionLevel: 'H' }, function (error) {
+        if (error) {
+            console.error("QR Code generation error:", error);
+            alert("Failed to generate QR code.");
+            return;
+        }
+        console.log('QR code generated successfully!');
+        qrRewardDescription.textContent = rewardDesc;
+        const expiryDate = new Date(expiryISOString);
+        qrExpiryInfo.textContent = `Expires at: ${expiryDate.toLocaleTimeString()}`;
+        qrCodeModal.style.display = 'flex'; // Show the modal (using flex for centering)
+    });
+}
+
+// Close QR Modal Logic
+closeQrModalButton.addEventListener('click', () => {
+    qrCodeModal.style.display = 'none';
+});
+
 // Handle Redeem Reward button click
 async function handleRedeemRewardClick(event) {
     const button = event.target;
     const rewardId = button.dataset.rewardId;
     const pointsCost = parseInt(button.dataset.cost, 10);
     const messageSpan = button.parentElement.querySelector(`.redeem-message[data-msg-for-reward="${rewardId}"]`);
+    const rewardDescElement = button.parentElement; // Get the LI element
+    const rewardDescText = rewardDescElement.textContent.split('(')[0].trim(); // Extract description
 
     // Basic check if user has enough points locally (optional, server does final check)
     const currentBalance = parseInt(pointsBalanceSpan.textContent, 10);
@@ -197,7 +227,7 @@ async function handleRedeemRewardClick(event) {
     }
 
     // Confirm before spending points
-    if (!confirm(`Redeem "${button.parentElement.textContent.split('(')[0].trim()}" for ${pointsCost} points?`)) {
+    if (!confirm(`Redeem "${rewardDescText}" for ${pointsCost} points?`)) {
         return;
     }
 
@@ -211,9 +241,10 @@ async function handleRedeemRewardClick(event) {
         const data = await response.json();
 
         if (response.ok) {
-            messageSpan.textContent = data.message; // Show confirmation message
-            updatePointsDisplay(data.newBalance); // Update total points
-             // Keep button disabled for this session or maybe hide the reward? Simplest is disabled.
+            messageSpan.textContent = ''; // Clear processing message
+            updatePointsDisplay(data.newBalance);
+            displayQRCode(data.redemptionToken, rewardDescText, data.expiresAt);
+            // Keep button disabled for this session
         } else {
             messageSpan.textContent = `Error: ${data.message}`;
             button.disabled = false;
