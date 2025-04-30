@@ -71,22 +71,24 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 if (err) {
                     console.error("Error creating businesses table:", err.message);
                 } else {
-                    // Seed data if table is empty
-                    db.get("SELECT COUNT(*) as count FROM businesses", (err, row) => {
-                        if (!err && row.count === 0) {
-                            console.log("Seeding initial business data...");
-                            const stmt = db.prepare("INSERT INTO businesses (name, description, address) VALUES (?, ?, ?)");
-                            initialBusinesses.forEach(business => {
-                                stmt.run(business.name, business.description, business.address);
-                            });
-                            stmt.finalize((err) => {
-                                if (!err) console.log("Finished seeding businesses.");
-                                else console.error("Error finalizing business seed statement:", err.message);
-                            });
-                        } else if (err) {
-                            console.error("Error checking business count for seeding:", err.message);
-                        }
-                    });
+                    // Seed data if table is empty - Add a slight delay
+                    setTimeout(() => {
+                        db.get("SELECT COUNT(*) as count FROM businesses", (err, row) => {
+                            if (!err && row.count === 0) {
+                                console.log("(Delayed) Seeding initial business data...");
+                                const stmt = db.prepare("INSERT INTO businesses (name, description, address) VALUES (?, ?, ?)");
+                                initialBusinesses.forEach(business => {
+                                    stmt.run(business.name, business.description, business.address);
+                                });
+                                stmt.finalize((err) => {
+                                    if (!err) console.log("(Delayed) Finished seeding businesses.");
+                                    else console.error("Error finalizing business seed statement:", err.message);
+                                });
+                            } else if (err) {
+                                console.error("Error checking business count for seeding:", err.message);
+                            }
+                        });
+                    }, 100); // Delay 100ms
                 }
             });
 
@@ -101,22 +103,24 @@ const db = new sqlite3.Database(dbPath, (err) => {
             )`, (err) => {
                 if (err) console.error("Error creating rewards table:", err.message);
                 else {
-                    // Seed rewards if table is empty
-                    db.get("SELECT COUNT(*) as count FROM rewards", (err, row) => {
-                        if (!err && row.count === 0) {
-                            console.log("Seeding initial reward data...");
-                            const stmt = db.prepare("INSERT INTO rewards (business_id, description, points_cost) VALUES (?, ?, ?)");
-                            initialRewards.forEach(reward => {
-                                stmt.run(reward.business_id, reward.description, reward.points_cost);
-                            });
-                            stmt.finalize((err) => {
-                                if (!err) console.log("Finished seeding rewards.");
-                                else console.error("Error finalizing reward seed statement:", err.message);
-                            });
-                        } else if (err) {
-                            console.error("Error checking reward count for seeding:", err.message);
-                        }
-                    });
+                    // Seed rewards if table is empty - Add a slight delay
+                    setTimeout(() => {
+                        db.get("SELECT COUNT(*) as count FROM rewards", (err, row) => {
+                            if (!err && row.count === 0) {
+                                console.log("(Delayed) Seeding initial reward data...");
+                                const stmt = db.prepare("INSERT INTO rewards (business_id, description, points_cost) VALUES (?, ?, ?)");
+                                initialRewards.forEach(reward => {
+                                    stmt.run(reward.business_id, reward.description, reward.points_cost);
+                                });
+                                stmt.finalize((err) => {
+                                    if (!err) console.log("(Delayed) Finished seeding rewards.");
+                                    else console.error("Error finalizing reward seed statement:", err.message);
+                                });
+                            } else if (err) {
+                                console.error("Error checking reward count for seeding:", err.message);
+                            }
+                        });
+                    }, 150); // Delay 150ms (slightly longer than business seed)
                 }
             });
 
