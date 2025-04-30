@@ -1,3 +1,5 @@
+require('dotenv').config(); // Load .env file at the very top
+
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
@@ -10,6 +12,9 @@ const crypto = require('crypto'); // Need crypto for token generation
 const app = express();
 const PORT = process.env.PORT || 3000; // Use environment variable or default to 3000
 const SALT_ROUNDS = 10; // For bcrypt password hashing
+
+// Determine frontend build directory path
+const frontendBuildPath = path.resolve(__dirname, '..', 'frontend', 'dist');
 
 // --- Middleware ---
 
@@ -317,6 +322,20 @@ app.post('/api/rewards/:rewardId/redeem', isAuthenticated, async (req, res) => {
         }
     } finally {
         client.release();
+    }
+});
+
+// Serve static files from the React build output
+app.use(express.static(frontendBuildPath));
+
+// Catch-all route to serve index.html for client-side routing (React Router)
+app.get('*', (req, res) => {
+    // Ensure API calls don't get caught here (though they shouldn't if defined above)
+    if (!req.path.startsWith('/api/')) {
+        res.sendFile(path.join(frontendBuildPath, 'index.html'));
+    } else {
+        // Handle API routes not found (optional)
+        res.status(404).json({ message: 'API endpoint not found' });
     }
 });
 

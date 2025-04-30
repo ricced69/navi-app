@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start:backend": "node src/server.js",
+    "start:frontend": "npm run dev --prefix frontend",
+    "dev": "npm-run-all --parallel start:backend start:frontend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build": "npm run build:frontend",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,9 +18,13 @@
     "bcrypt": "^5.1.1",
     "connect-pg-simple": "^10.0.0",
     "connect-sqlite3": "^0.9.15",
+    "dotenv": "^16.5.0",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "pg": "^8.15.6",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
   }
 }
