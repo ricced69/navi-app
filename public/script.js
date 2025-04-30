@@ -211,8 +211,10 @@ function displayQRCode(token, rewardDesc, expiryISOString) {
         console.log('QR code generated successfully!');
         qrRewardDescription.textContent = rewardDesc;
         const expiryDate = new Date(expiryISOString);
-        qrExpiryInfo.textContent = `Expires at: ${expiryDate.toLocaleTimeString()}`;
-        qrCodeModal.style.display = 'flex'; // Show the modal (using flex for centering)
+        // Format time nicely (e.g., 19:05:30)
+        const formattedTime = expiryDate.toLocaleTimeString([], { hour: '2-digit', minute:'2-digit', second:'2-digit' });
+        qrExpiryInfo.textContent = `Expires at: ${formattedTime}`;
+        qrCodeModal.style.display = 'flex'; // Show the modal
     });
 }
 
