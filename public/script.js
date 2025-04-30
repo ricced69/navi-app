@@ -167,38 +167,36 @@ async function handleEarnPointsClick(event) {
     const businessId = button.dataset.businessId;
     const messageSpan = businessListDiv.querySelector(`.earn-message[data-msg-for="${businessId}"]`);
 
-    // Keep button enabled initially, disable only on processing
+    // DON'T disable button here. Set message and disable INSIDE the try block.
     messageSpan.textContent = 'Processing...';
 
-    // Temporarily disable while processing THIS request
-    button.disabled = true;
-
     try {
+        // Disable button only while processing the request
+        button.disabled = true; 
+
         const response = await fetch(`/api/businesses/${businessId}/earn`, {
             method: 'POST'
         });
-        const data = await response.json(); // Always try to parse JSON
+        const data = await response.json();
 
         if (response.ok) {
             messageSpan.textContent = data.message;
             updatePointsDisplay(data.newBalance);
-            // Don't re-enable button on success, let rate limit handle it - button remains disabled from start of try block
+            // Success or Rate Limit Hit -> Button STAYS disabled for this session
         } else {
-            // Handle specific errors like rate limiting
+            // Other Error (e.g., server error, bad request)
             messageSpan.textContent = `Error: ${data.message || response.statusText}`;
-            if (response.status !== 429) {
-                 // Re-enable button only if it wasn't a rate limit error (or other non-OK status)
-                 button.disabled = false;
-            }
-             // If it *was* 429, the button stays disabled from the start of the try block
+             // Re-enable button ONLY if it wasn't success or rate limit
+            button.disabled = false; 
         }
 
     } catch (error) {
+        // Network Error
         console.error("Error earning points:", error);
         messageSpan.textContent = 'Network error.';
         button.disabled = false; // Re-enable on network errors
-    }
-    // Note: Button might stay disabled if rate limit (429) was hit.
+    } 
+    // Note: If successful or rate limited, button remains disabled until page reload.
 }
 
 // Function to display QR Code Modal

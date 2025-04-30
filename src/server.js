@@ -160,7 +160,7 @@ app.post('/api/businesses/:businessId/earn', isAuthenticated, async (req, res) =
     const businessId = parseInt(req.params.businessId, 10);
     const pointsToAward = 10;
     const rateLimitHours = 24; // Limit to once per 24 hours per business
-    const client = await db.pool.connect(); // Get client for transaction
+    const client = await db.pool.connect();
 
     try {
         await client.query('BEGIN');
@@ -178,8 +178,7 @@ app.post('/api/businesses/:businessId/earn', isAuthenticated, async (req, res) =
             const lastEarningTime = new Date(lastEarningResult.rows[0].timestamp);
             const timeLimit = new Date(Date.now() - rateLimitHours * 60 * 60 * 1000);
             if (lastEarningTime > timeLimit) {
-                 await client.query('ROLLBACK'); // No need to continue transaction
-                 client.release();
+                 await client.query('ROLLBACK');
                  console.log(`Rate limit hit for user ${userId} at business ${businessId}`);
                  return res.status(429).json({ message: `Rate limit: You can earn points here again in ${rateLimitHours} hours.` });
             }
@@ -213,7 +212,7 @@ app.post('/api/businesses/:businessId/earn', isAuthenticated, async (req, res) =
         });
 
     } catch (error) {
-        await client.query('ROLLBACK');
+        try { await client.query('ROLLBACK'); } catch (rollbackError) { console.error('Rollback failed:', rollbackError); }
         console.error("Error processing point earning:", error);
         // Check if it was a known error type (like user not found), otherwise generic error
         if (error.message.includes("User not found")) {
