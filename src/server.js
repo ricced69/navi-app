@@ -157,29 +157,71 @@ app.get('/api/businesses', isAuthenticated, async (req, res) => {
 // Earn Points at a Business (requires login)
 app.post('/api/businesses/:businessId/earn', isAuthenticated, async (req, res) => {
     const userId = req.session.userId;
-    const businessId = req.params.businessId;
+    const businessId = parseInt(req.params.businessId, 10);
     const pointsToAward = 10;
-
-    // TODO: Implement rate limiting later (e.g., only earn once per day per business)
+    const rateLimitHours = 24; // Limit to once per 24 hours per business
+    const client = await db.pool.connect(); // Get client for transaction
 
     try {
-        // Update and fetch new balance in one go (or use transaction)
-        const updateResult = await db.query(
+        await client.query('BEGIN');
+
+        // 1. Check rate limit: Has user earned points at this business recently?
+        const rateLimitCheckSql = `
+            SELECT timestamp FROM earnings_log 
+            WHERE user_id = $1 AND business_id = $2 
+            ORDER BY timestamp DESC 
+            LIMIT 1
+        `;
+        const lastEarningResult = await client.query(rateLimitCheckSql, [userId, businessId]);
+        
+        if (lastEarningResult.rows.length > 0) {
+            const lastEarningTime = new Date(lastEarningResult.rows[0].timestamp);
+            const timeLimit = new Date(Date.now() - rateLimitHours * 60 * 60 * 1000);
+            if (lastEarningTime > timeLimit) {
+                 await client.query('ROLLBACK'); // No need to continue transaction
+                 client.release();
+                 console.log(`Rate limit hit for user ${userId} at business ${businessId}`);
+                 return res.status(429).json({ message: `Rate limit: You can earn points here again in ${rateLimitHours} hours.` });
+            }
+        }
+
+        // 2. Update user points balance
+        const updateResult = await client.query(
             `UPDATE users SET points_balance = points_balance + $1 WHERE id = $2 RETURNING points_balance`,
             [pointsToAward, userId]
         );
         if (updateResult.rowCount === 0) {
-            return res.status(404).json({ message: "User not found." });
+            throw new Error("User not found during point update."); // Should be caught by transaction rollback
         }
         const newBalance = updateResult.rows[0].points_balance;
-        console.log(`User ${userId} earned ${pointsToAward} points. New balance: ${newBalance}`);
+
+        // 3. Log the earning event
+        const logSql = `
+            INSERT INTO earnings_log (user_id, business_id, points_earned) 
+            VALUES ($1, $2, $3)
+        `;
+        await client.query(logSql, [userId, businessId, pointsToAward]);
+
+        // 4. Commit transaction
+        await client.query('COMMIT');
+
+        // 5. Success
+        console.log(`User ${userId} earned ${pointsToAward} points at business ${businessId}. New balance: ${newBalance}`);
         res.status(200).json({ 
             message: `Successfully earned ${pointsToAward} points!`, 
             newBalance: newBalance 
         });
+
     } catch (error) {
-        console.error("Error updating points balance:", error);
-        return res.status(500).json({ message: "Database error while updating points." });
+        await client.query('ROLLBACK');
+        console.error("Error processing point earning:", error);
+        // Check if it was a known error type (like user not found), otherwise generic error
+        if (error.message.includes("User not found")) {
+            return res.status(404).json({ message: error.message });
+        }
+        return res.status(500).json({ message: "Database error while processing point earning." });
+    } finally {
+        client.release();
     }
 });
 

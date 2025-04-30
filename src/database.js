@@ -85,6 +85,19 @@ async function initializeSchema() {
         await client.query(`CREATE INDEX IF NOT EXISTS idx_redemptions_status_expiry ON redemptions (status, token_expires_at);`);
         console.log("Redemptions table checked/created.");
 
+        // Create earnings_log table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS earnings_log (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+                points_earned INTEGER NOT NULL,
+                timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+            );
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_earnings_log_user_business_time ON earnings_log (user_id, business_id, timestamp);`);
+        console.log("Earnings Log table checked/created.");
+
         // Create sessions table (needed for connect-pg-simple)
         // Define primary key directly in CREATE TABLE
         await client.query(`

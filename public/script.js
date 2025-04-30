@@ -167,24 +167,33 @@ async function handleEarnPointsClick(event) {
     const businessId = button.dataset.businessId;
     const messageSpan = businessListDiv.querySelector(`.earn-message[data-msg-for="${businessId}"]`);
 
+    // Keep button enabled initially, disable only on processing
+    button.disabled = true;
     messageSpan.textContent = 'Processing...';
 
     try {
         const response = await fetch(`/api/businesses/${businessId}/earn`, {
             method: 'POST'
         });
-        const data = await response.json();
+        const data = await response.json(); // Always try to parse JSON
 
         if (response.ok) {
-            messageSpan.textContent = data.message; // Show success message
-            updatePointsDisplay(data.newBalance); // Update total points display
-            // Keep button disabled for this session to prevent spamming (simplest approach)
+            messageSpan.textContent = data.message;
+            updatePointsDisplay(data.newBalance);
+            // Don't re-enable button on success for now, let rate limit handle it
         } else {
-            messageSpan.textContent = `Error: ${data.message}`; // Show error
+            // Handle specific errors like rate limiting
+            messageSpan.textContent = `Error: ${data.message || response.statusText}`;
+            if (response.status !== 429) {
+                 // Re-enable button only if it wasn't a rate limit error
+                 button.disabled = false; 
+            }
         }
+
     } catch (error) {
         console.error("Error earning points:", error);
         messageSpan.textContent = 'Network error.';
+        button.disabled = false; // Re-enable on network errors
     }
 }
 
