@@ -58,6 +58,9 @@ async function loadBusinesses() {
 
         // Create elements for each business
         const ul = document.createElement('ul');
+        ul.style.paddingLeft = '0';
+        ul.style.listStyle = 'none';
+
         businesses.forEach(business => {
             const li = document.createElement('li');
             li.style.marginBottom = '10px';
@@ -74,17 +77,24 @@ async function loadBusinesses() {
                 </div>
             `;
             ul.appendChild(li);
-            // Fetch rewards for this specific business
-            loadRewardsForBusiness(business.id);
         });
         businessListDiv.appendChild(ul);
 
-        document.querySelectorAll('.earn-points-btn').forEach(button => {
+        // Add event listeners for EARN buttons AFTER they are added to the DOM
+        businessListDiv.querySelectorAll('.earn-points-btn').forEach(button => {
             button.addEventListener('click', handleEarnPointsClick);
         });
 
+        // NOW, fetch rewards for each business AFTER the list is in the DOM
+        console.log("[Debug] Main business list appended. Fetching rewards...");
+        ul.querySelectorAll('.rewards-list').forEach(rewardsContainer => {
+            const businessId = rewardsContainer.dataset.rewardsFor;
+            if (businessId) {
+                loadRewardsForBusiness(businessId);
+            }
+        });
     } catch (error) {
-        console.error('Error loading businesses:', error);
+        console.error('[Debug] Error in loadBusinesses:', error);
         businessListDiv.innerHTML = `<p>Error loading businesses: ${error.message}</p>`;
     }
 }
