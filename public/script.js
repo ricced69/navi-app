@@ -6,6 +6,7 @@ const userStatusDiv = document.getElementById('user-status');
 const authFormsDiv = document.getElementById('auth-forms');
 const logoutSectionDiv = document.getElementById('logout-section');
 const mainContentDiv = document.getElementById('main-content');
+const businessListDiv = document.getElementById('business-list');
 
 const signupForm = document.getElementById('signup-form');
 const signupEmailInput = document.getElementById('signup-email');
@@ -21,6 +22,52 @@ const logoutButton = document.getElementById('logout-button');
 
 // --- Functions ---
 
+// Function to fetch and display businesses
+async function loadBusinesses() {
+    businessListDiv.innerHTML = '<p>Loading businesses...</p>'; // Show loading message
+    try {
+        const response = await fetch('/api/businesses');
+        if (!response.ok) {
+            // Handle errors, e.g., user session expired
+            if (response.status === 401) {
+                businessListDiv.innerHTML = '<p>Your session may have expired. Please log in again.</p>';
+                updateUI(false); // Update overall UI to logged-out state
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+            return; // Stop execution if error
+        }
+
+        const businesses = await response.json();
+
+        businessListDiv.innerHTML = ''; // Clear loading message
+
+        if (businesses.length === 0) {
+            businessListDiv.innerHTML = '<p>No partner businesses found.</p>';
+            return;
+        }
+
+        // Create elements for each business
+        const ul = document.createElement('ul');
+        businesses.forEach(business => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <strong>${business.name}</strong><br>
+                <em>${business.description || 'No description'}</em><br>
+                <small>${business.address || 'No address'}</small>
+            `;
+            // TODO: Add buttons/links for earning points later
+            ul.appendChild(li);
+        });
+        businessListDiv.appendChild(ul);
+
+    } catch (error) {
+        console.error('Error loading businesses:', error);
+        businessListDiv.innerHTML = `<p>Error loading businesses: ${error.message}</p>`;
+    }
+}
+
 // Update UI based on login state
 function updateUI(isLoggedIn, email = '') {
     if (isLoggedIn) {
@@ -28,12 +75,14 @@ function updateUI(isLoggedIn, email = '') {
         authFormsDiv.style.display = 'none';
         logoutSectionDiv.style.display = 'block';
         mainContentDiv.style.display = 'block';
+        loadBusinesses(); // <-- Load businesses when user is logged in
     } else {
         userStatusDiv.textContent = 'You are not logged in.';
         authFormsDiv.style.display = 'block';
         logoutSectionDiv.style.display = 'none';
         mainContentDiv.style.display = 'none';
-        signupMessageP.textContent = ''; // Clear messages on state change
+        businessListDiv.innerHTML = ''; // Clear business list when logged out
+        signupMessageP.textContent = '';
         loginMessageP.textContent = '';
     }
 }

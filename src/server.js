@@ -131,7 +131,7 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
-// Check Login Status Route (Example)
+// Check Login Status Route
 app.get('/api/user/status', (req, res) => {
     if (req.session.userId) {
         res.json({ loggedIn: true, email: req.session.email, userId: req.session.userId });
@@ -140,9 +140,31 @@ app.get('/api/user/status', (req, res) => {
     }
 });
 
+// --- Business Routes ---
+
+// Middleware to check if user is authenticated
+function isAuthenticated(req, res, next) {
+    if (req.session.userId) {
+        next(); // User is logged in, proceed to the route handler
+    } else {
+        res.status(401).json({ message: 'Unauthorized: Please log in.' });
+    }
+}
+
+// Get All Businesses (requires login)
+app.get('/api/businesses', isAuthenticated, (req, res) => {
+    db.all("SELECT id, name, description, address FROM businesses ORDER BY name", [], (err, rows) => {
+        if (err) {
+            console.error("Error fetching businesses:", err.message);
+            res.status(500).json({ message: "Error retrieving businesses from database." });
+        } else {
+            res.status(200).json(rows); // Send the array of businesses
+        }
+    });
+});
 
 // --- Server Start ---
 
 app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+    console.log(`Server listening on port ${PORT}`);
 }); 
