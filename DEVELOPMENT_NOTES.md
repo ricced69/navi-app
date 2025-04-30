@@ -10,7 +10,7 @@ Key features for this enhanced MVP include: persistent auth, points system, QR c
 
 ## Current Status (as of {{TIMESTAMP}})
 
-*   **Setup:** Node.js/Express backend, Vanilla JS/HTML/CSS frontend (Basic Styling).
+*   **Setup:** Node.js/Express backend. ~~Vanilla JS/HTML/CSS frontend (Basic Styling).~~ **Decision made to migrate frontend.**
 *   **Database:** Hosted PostgreSQL (Neon) - Persistence achieved.
 *   **Version Control:** Git repository on GitHub.
 *   **Deployment:** Continuous deployment via Vercel.
@@ -23,8 +23,12 @@ Key features for this enhanced MVP include: persistent auth, points system, QR c
 
 ## Revised Strategy & Key Decisions (Shift to Enhanced MVP)
 
-*   **Ambition Increased:** Pivot from basic demo to building a more complete, polished application before initial showcasing, leveraging development momentum.
-*   **UI/UX Priority:** A high-quality, modern user interface is now a key goal for this phase.
+*   **Ambition Increased:** Confirmed.
+*   **UI/UX Priority:** Confirmed.
+    *   **Frontend Stack Chosen:** Migrate to **React (with Vite)** for structured UI development.
+    *   **Styling:** Use **Tailwind CSS** for utility-first styling and rapid development.
+    *   **Animation:** Incorporate **Framer Motion** for smooth, engaging animations.
+    *   **Design Direction:** Aim for a modern, polished look with Duolingo-inspired gamification elements and a pink primary color scheme.
 *   **Map View:** Implementing an interactive map for business discovery is now part of the enhanced MVP scope.
 *   **QR Code Validation Endpoint:** Adding a backend endpoint to validate redemption tokens is now included to demonstrate the full secure loop (partner scanning interface still deferred).
 *   **Persistent Database:** Implemented.
@@ -33,22 +37,30 @@ Key features for this enhanced MVP include: persistent auth, points system, QR c
 
 ## Immediate Next Steps (Revised Roadmap)
 
-1.  **(Current Focus): UI/UX Foundation:**
-    *   Decide on frontend approach (Enhanced Vanilla CSS vs. Framework like SvelteKit/Vue).
-    *   Establish design system (colors, typography, layout).
-    *   Refactor existing UI components with the new design.
-2.  **Core Feature Polish:**
+1.  **(Current Focus): Initialize React Frontend & Setup:**
+    *   Scaffold a new React + TypeScript project using Vite.
+    *   Install and configure Tailwind CSS.
+    *   Install Framer Motion.
+    *   Restructure project directories (integrate Vite frontend with Express backend).
+    *   Configure Vercel/`vercel.json` for the new monorepo-like structure (serving frontend + API).
+2.  **Migrate Core UI to React Components:**
+    *   Rebuild Auth forms (Signup/Login).
+    *   Rebuild Business/Reward list display.
+    *   Rebuild QR Code modal.
+    *   Integrate API calls (`fetch`) within React components/hooks.
+    *   Apply initial Tailwind styling based on the pink theme.
+3.  **Core Feature Polish:**
     *   Revert temporary rate limit duration to a realistic value (e.g., 8-24 hours).
     *   Improve error handling and user feedback messages.
     *   Enhance QR code modal presentation.
-3.  **Map View Implementation:**
+4.  **Map View Implementation:**
     *   Choose map library (e.g., Leaflet.js).
     *   Add coordinates to business data (DB schema update + seeding).
     *   Implement map display with interactive markers.
-4.  **Partner QR Code Validation Endpoint:**
+5.  **Partner QR Code Validation Endpoint:**
     *   Create backend API endpoint (`POST /api/redemptions/validate` or similar).
     *   Endpoint logic: Find redemption by token, check expiry/status, update status to 'REDEEMED', return success/failure.
-5.  **(Later):** Gamification, Landing Page, Partner App, Admin Panel etc.
+6.  **(Later):** Gamification implementation (animations, progress bars etc.), Landing Page, Partner App, Admin Panel etc.
 
 ## Future Ideas / Roadmap (Post-Enhanced MVP)
 
@@ -58,8 +70,8 @@ Key features for this enhanced MVP include: persistent auth, points system, QR c
 
 ## Local Setup
 
-*   Requires PostgreSQL connection string as `DATABASE_URL` env var (use `.env` + `dotenv`).
-*   // ... npm install, npm start ...
+*   Requires PostgreSQL connection string as `DATABASE_URL` env var.
+*   **(Update Needed):** Will involve running both the Vite dev server (for frontend) and the Node.js server (for backend) concurrently, likely using `npm-run-all` or similar.
 
 ---
 *This file reflects the updated strategy for an Enhanced MVP as of {{TIMESTAMP}}.* 
