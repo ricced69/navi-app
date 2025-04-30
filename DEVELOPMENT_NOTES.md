@@ -2,63 +2,64 @@
 
 Last Updated: {{TIMESTAMP}}
 
-## Project Goal
+## Project Goal (REVISED - Enhanced MVP)
 
-Create a **demo-ready, Minimum Viable Product (MVP)** (mobile-first web application) for Debrecen, Hungary, called NAVI.
-Users can discover partner businesses, earn points through simple tasks, and **securely redeem** points for discounts using a **QR code-based verification** system.
-The goal is to demonstrate a functional, persistent, and reasonably secure core loop to potential partners and test the concept's appeal.
+Create a **polished, feature-rich Enhanced Minimum Viable Product (MVP)** (mobile-first web application) for Debrecen, Hungary, called NAVI.
+The goal is to demonstrate a highly functional, persistent, secure, and visually appealing application to potential partners and early users, showcasing the core value proposition convincingly.
+Key features for this enhanced MVP include: persistent auth, points system, QR code redemption **with backend validation endpoint**, interactive map view, and a significantly improved UI/UX.
 
 ## Current Status (as of {{TIMESTAMP}})
 
-*   **Setup:** Node.js/Express backend, Vanilla JS/HTML/CSS frontend.
-*   **Database:** Migrated to hosted PostgreSQL (Neon) solving persistence issues.
-*   **Version Control:** Git repository on GitHub (`https://github.com/ricced69/navi-app.git`).
-*   **Deployment:** Continuous deployment via Vercel, now with persistent data. Live at: [Insert Vercel URL Here - User needs to add this].
-*   **Core Features Implemented:**
-    *   Persistent User Signup/Login/Logout.
-    *   Displaying seeded partner businesses.
-    *   Point earning via repeatable button clicks.
-    *   Displaying user point balance.
-    *   Displaying seeded rewards.
-    *   **Secure Reward Redemption (User-Side):**
-        *   Backend generates unique, short-lived token and logs redemption attempt.
-        *   Frontend displays QR code containing the token in a modal upon redemption.
-*   **Styling:** Basic CSS improvements applied.
-*   **Development Notes:** Being maintained.
+*   **Setup:** Node.js/Express backend, Vanilla JS/HTML/CSS frontend (Basic Styling).
+*   **Database:** Hosted PostgreSQL (Neon) - Persistence achieved.
+*   **Version Control:** Git repository on GitHub.
+*   **Deployment:** Continuous deployment via Vercel.
+*   **Core Loop Implemented:**
+    *   Persistent User Auth.
+    *   Business/Reward Display (Seeded Data).
+    *   Point Earning (Basic Rate Limit - Currently set low for testing).
+    *   QR Code Generation for Redemption (User-Side).
+*   **Development Notes:** Maintained.
 
-## Revised Strategy & Key Decisions (Shift from basic PoC to Demo MVP)
+## Revised Strategy & Key Decisions (Shift to Enhanced MVP)
 
-*   **Increased Scope for Demo:** Recognizing that a simple visual redemption confirmation is insecure (easily spoofed) and untrackable for partners (hindering business model validation), the MVP scope is increased to include a more robust flow.
-*   **QR Code Redemption:** User app now generates QR code containing unique token. **Partner scanning interface deferred** post-MVP demo.
-*   **Persistent Database Required:** **Implemented** (Migrated to PostgreSQL/Neon).
-*   **Partner App Deferred:** Confirmed. Initial MVP demo focuses on user app. **Future partner features will likely start integrated (role-based) within the main app** before potentially separating later if needed.
-*   **Focus on User App First:** Development will concentrate on making the user-facing web app fully functional with the persistent database and QR code generation.
-*   **Rate Limiting for Points:** Basic server-side rate limiting for point earning tasks will be implemented to make the demo more realistic.
-*   **Admin Panel Deferred:** Partner onboarding and reward management will remain manual (code seeding or direct DB manipulation by the developer) for the MVP; a proper admin panel is a future feature.
+*   **Ambition Increased:** Pivot from basic demo to building a more complete, polished application before initial showcasing, leveraging development momentum.
+*   **UI/UX Priority:** A high-quality, modern user interface is now a key goal for this phase.
+*   **Map View:** Implementing an interactive map for business discovery is now part of the enhanced MVP scope.
+*   **QR Code Validation Endpoint:** Adding a backend endpoint to validate redemption tokens is now included to demonstrate the full secure loop (partner scanning interface still deferred).
+*   **Persistent Database:** Implemented.
+*   **Partner App Deferred:** Confirmed. Partner features (scanning UI, dashboard) will follow the enhanced MVP.
+*   **Rate Limiting:** To be refined and made configurable.
 
-## Immediate Next Steps (Revised)
+## Immediate Next Steps (Revised Roadmap)
 
-1.  ~~**(DONE): Migrate Database to Hosted PostgreSQL**~~
-2.  ~~**(DONE): Implement QR Code Redemption Flow (User App Side)**~~
-3.  **(Current Focus): Implement Basic Point Earning Rate Limiting:**
-    *   Add necessary DB schema (e.g., `earnings_log` table or timestamps).
-    *   Modify `POST /api/businesses/:businessId/earn` endpoint to check limits (e.g., once per hour/day per business) before awarding points.
-    *   Provide appropriate feedback to the user if the limit is hit.
-4.  **Improve Redemption Confirmation UI:** Enhance the modal displaying the QR code (e.g., clearer expiry time, maybe reward details).
+1.  **(Current Focus): UI/UX Foundation:**
+    *   Decide on frontend approach (Enhanced Vanilla CSS vs. Framework like SvelteKit/Vue).
+    *   Establish design system (colors, typography, layout).
+    *   Refactor existing UI components with the new design.
+2.  **Core Feature Polish:**
+    *   Revert temporary rate limit duration to a realistic value (e.g., 8-24 hours).
+    *   Improve error handling and user feedback messages.
+    *   Enhance QR code modal presentation.
+3.  **Map View Implementation:**
+    *   Choose map library (e.g., Leaflet.js).
+    *   Add coordinates to business data (DB schema update + seeding).
+    *   Implement map display with interactive markers.
+4.  **Partner QR Code Validation Endpoint:**
+    *   Create backend API endpoint (`POST /api/redemptions/validate` or similar).
+    *   Endpoint logic: Find redemption by token, check expiry/status, update status to 'REDEEMED', return success/failure.
+5.  **(Later):** Gamification, Landing Page, Partner App, Admin Panel etc.
 
-## Future Ideas / Roadmap (Post-MVP Demo)
+## Future Ideas / Roadmap (Post-Enhanced MVP)
 
-*   Build Partner-Facing Interface (role-based or separate app) - incl. QR scanner/validator.
-*   Build Admin Panel (for managing businesses, rewards, users).
-*   Implement different point-earning tasks.
-*   Map View on User App.
-*   Advanced UI/UX, Search/Filtering.
-*   Notifications.
+*   Build Partner-Facing Interface (QR scanner, stats).
+*   Build Admin Panel.
+*   // ... (other items remain)
 
 ## Local Setup
 
-*   Requires PostgreSQL connection string set as `DATABASE_URL` environment variable (e.g., using a `.env` file locally with `dotenv` package).
+*   Requires PostgreSQL connection string as `DATABASE_URL` env var (use `.env` + `dotenv`).
 *   // ... npm install, npm start ...
 
 ---
-*This file reflects the updated strategy for a demo-ready MVP as of {{TIMESTAMP}}.* 
+*This file reflects the updated strategy for an Enhanced MVP as of {{TIMESTAMP}}.* 
