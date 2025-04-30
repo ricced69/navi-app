@@ -38,9 +38,18 @@ const db = new sqlite3.Database(dbPath, (err) => {
             db.run(`CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL
+                password_hash TEXT NOT NULL,
+                points_balance INTEGER DEFAULT 0 NOT NULL
             )`, (err) => {
-                if (err) console.error("Error creating users table:", err.message);
+                if (err) console.error("Error creating/altering users table:", err.message);
+                else {
+                    // Add points_balance column if it doesn't exist (for existing dbs)
+                    db.run(`ALTER TABLE users ADD COLUMN points_balance INTEGER DEFAULT 0 NOT NULL`, (err) => {
+                        if (err && !err.message.includes('duplicate column name')) {
+                            console.error("Error adding points_balance column:", err.message);
+                        }
+                    });
+                }
             });
 
             // Create the businesses table if it doesn't exist

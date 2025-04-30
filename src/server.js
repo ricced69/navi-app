@@ -163,6 +163,54 @@ app.get('/api/businesses', isAuthenticated, (req, res) => {
     });
 });
 
+// Earn Points at a Business (requires login)
+app.post('/api/businesses/:businessId/earn', isAuthenticated, (req, res) => {
+    const userId = req.session.userId;
+    const businessId = req.params.businessId;
+    const pointsToAward = 10; // Hardcoded for now
+
+    // TODO: Implement rate limiting later (e.g., only earn once per day per business)
+
+    const sql = `UPDATE users SET points_balance = points_balance + ? WHERE id = ?`;
+    db.run(sql, [pointsToAward, userId], function(err) {
+        if (err) {
+            console.error("Error updating points balance:", err.message);
+            return res.status(500).json({ message: "Database error while updating points." });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        db.get("SELECT points_balance FROM users WHERE id = ?", [userId], (err, user) => {
+            if (err || !user) {
+                console.error("Error fetching new points balance:", err ? err.message : "User not found after update");
+                return res.status(500).json({ message: "Points awarded, but failed to fetch new balance." });
+            }
+            console.log(`User ${userId} earned ${pointsToAward} points. New balance: ${user.points_balance}`);
+            res.status(200).json({ 
+                message: `Successfully earned ${pointsToAward} points!`, 
+                newBalance: user.points_balance 
+            });
+        });
+    });
+});
+
+// Get Current User's Points Balance (requires login)
+app.get('/api/user/points', isAuthenticated, (req, res) => {
+    const userId = req.session.userId;
+    db.get("SELECT points_balance FROM users WHERE id = ?", [userId], (err, user) => {
+        if (err) {
+            console.error("Error fetching points balance:", err.message);
+            return res.status(500).json({ message: "Database error fetching points balance." });
+        }
+        if (!user) {
+            req.session.destroy();
+            return res.status(404).json({ message: "User not found." });
+        }
+        res.status(200).json({ balance: user.points_balance });
+    });
+});
+
 // --- Server Start ---
 
 app.listen(PORT, () => {
