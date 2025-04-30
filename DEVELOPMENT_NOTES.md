@@ -18,6 +18,7 @@ The goal is to test the viability of this hyperlocal loyalty concept.
     *   User Signup (email/password, bcrypt hashing).
     *   User Login/Logout (session management via `express-session` and `connect-sqlite3`).
     *   Displaying a list of hardcoded/seeded partner businesses (`/api/businesses`) to logged-in users.
+    *   **Added basic CSS styling** for a cleaner presentation.
 *   **Dummy Data:** Using 3 dummy businesses for testing.
 
 ## Key Decisions & Context
@@ -30,14 +31,15 @@ The goal is to test the viability of this hyperlocal loyalty concept.
 *   **Manual Business Onboarding:** Businesses are currently added via code seeding (`database.js`). An admin panel is a future feature.
 *   **Vercel:** Chosen for deployment due to ease of use and free tier.
 *   **GitHub:** Used for version control and triggering Vercel builds.
+*   **Basic Styling Added:** Applied simple CSS to improve layout and appearance for demo purposes.
 
 ## Immediate Next Steps
 
-1.  Implement the first point-earning mechanism (e.g., a "Check-in" or "Earn Points" button per business).
-    *   Create necessary database table(s) (`user_points`? `activity_log`?).
-    *   Add backend API endpoint(s) to record the action and award points.
-    *   Update frontend to display the button and handle clicks.
-    *   Update frontend to display the user's current point balance.
+1.  **(Current Focus):** Implement the first point-earning mechanism (e.g., an "Earn Points" button per business).
+    *   Update database schema (`users` table with `points_balance`).
+    *   Add backend API endpoint (`POST /api/businesses/:businessId/earn`) to award points.
+    *   Add backend API endpoint (`GET /api/user/points`) to fetch current balance.
+    *   Update frontend to display the button, handle clicks, and show point balance.
 
 ## Future Ideas / Roadmap
 
