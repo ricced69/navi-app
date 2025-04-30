@@ -9,6 +9,11 @@ const app = express();
 const PORT = process.env.PORT || 3000; // Use environment variable or default to 3000
 const SALT_ROUNDS = 10; // For bcrypt password hashing
 
+// Determine session store directory based on environment
+const isVercel = process.env.VERCEL_ENV === 'production' || process.env.VERCEL_ENV === 'preview';
+const sessionDbDirectory = isVercel ? '/tmp' : path.resolve(__dirname, '..');
+console.log(`Using session store directory: ${sessionDbDirectory}`); // Log for debugging
+
 // --- Middleware ---
 
 // 1. Body Parser for JSON requests
@@ -17,17 +22,17 @@ app.use(express.json());
 // 2. Session Middleware
 app.use(session({
     store: new SQLiteStore({
-        db: 'navi.db', // Use the same db file
-        dir: path.resolve(__dirname, '..'), // Root directory
-        table: 'sessions' // Optional: table name for sessions
+        db: 'sessions.db', // Separate file for sessions is cleaner
+        dir: sessionDbDirectory, // Use environment-specific directory
+        table: 'sessions'
     }),
-    secret: 'your secret key', // IMPORTANT: Change this to a real secret! Use an environment variable.
+    secret: process.env.SESSION_SECRET || 'fallback-secret-dev', // Use env variable!
     resave: false,
     saveUninitialized: false,
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24 // Cookie valid for 1 day
-        // secure: process.env.NODE_ENV === 'production', // Use secure cookies in production (HTTPS)
-        // httpOnly: true // Helps prevent XSS attacks
+        maxAge: 1000 * 60 * 60 * 24 // 1 day
+        // secure: isVercel, // Enable secure cookies only on Vercel (HTTPS)
+        // httpOnly: true
     }
 }));
 
